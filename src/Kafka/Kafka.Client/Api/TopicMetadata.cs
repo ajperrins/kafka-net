@@ -173,11 +173,11 @@
 
         public int PartitionId { get; private set; }
 
-        internal readonly Broker Leader;
+        public readonly Broker Leader;
 
-        internal readonly IEnumerable<Broker> Replicas;
+        public readonly IEnumerable<Broker> Replicas;
 
-        internal readonly IEnumerable<Broker> Isr;
+        public readonly IEnumerable<Broker> Isr;
 
         public readonly short ErrorCode;
 
