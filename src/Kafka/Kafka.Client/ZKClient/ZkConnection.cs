@@ -1,4 +1,6 @@
-﻿namespace Kafka.Client.ZKClient
+﻿using System.Linq;
+
+namespace Kafka.Client.ZKClient
 {
     using System;
     using System.Collections.Generic;
@@ -100,7 +102,7 @@
 
         public List<string> GetChildren(string path, bool watch) 
         {
-            return this._zk.GetChildren(path, watch);
+            return this._zk.GetChildren(path, watch).ToList();
         }
 
         public byte[] ReadData(string path, Stat stat, bool watch) 

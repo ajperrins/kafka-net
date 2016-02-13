@@ -65,7 +65,7 @@
     ///  /consumers/[group_id]/offsets/[topic]/[broker_id-partition_id] --> offset_counter_value
     ///  Each consumer tracks the offset of the latest message consumed for each partition.
     /// </summary>
-    internal class ZookeeperConsumerConnector : IConsumerConnector
+    public class ZookeeperConsumerConnector : IConsumerConnector
     {
         public static readonly FetchedDataChunk ShutdownCommand = new FetchedDataChunk(null, null, -1L);
 
@@ -659,21 +659,22 @@
                     var partitionOwnershipDecision = new Dictionary<Tuple<string, int>, string>();
                     var currentTopicRegistry = new Pool<string, Pool<int, PartitionTopicInfo>>();
 
-                    foreach (var topicAndConsumerThreadIsSet in myTopicThreadIdsMap)
+                    foreach (var topicAndConsumerThreadIdSet in myTopicThreadIdsMap)
                     {
-                        var topic = topicAndConsumerThreadIsSet.Key;
-                        var consumerThreadIdSet = topicAndConsumerThreadIsSet.Value;
+                        var topic = topicAndConsumerThreadIdSet.Key;
+                        var consumerThreadIdSet = topicAndConsumerThreadIdSet.Value;
 
                         currentTopicRegistry[topic] = new Pool<int, PartitionTopicInfo>();
 
                         var topicDirs = new ZKGroupTopicDirs(group, topic);
                         var curConsumers = consumersPerTopicMap.Get(topic);
-                        var curPartitions = partitionsPerTopicMap.Get(topic);
+                        var partitionIdList = partitionsPerTopicMap.Get(topic);
 
-                        var nPartsPerConsumer = curPartitions.Count / curConsumers.Count;
-                        var nConsumersWithExtraPart = curPartitions.Count % curConsumers.Count;
+                        var nPartsPerConsumer = partitionIdList.Count / curConsumers.Count;
+                        var nConsumersWithExtraPart = partitionIdList.Count % curConsumers.Count;
 
-                        Logger.InfoFormat("Consumer {0} rebalancing the following partitions: {1} for topic {2} with consumers: {3}", consumerIdString, string.Join(",", curPartitions), topic, string.Join(",", curConsumers));
+                        // When re-balancing on a topic, this is logging _other_ groups than the one in question (last string.format argument); verify that is correct
+                        Logger.InfoFormat("Consumer {0} rebalancing the following partitions: {1} for topic {2} with consumers: {3}", consumerIdString, string.Join(",", partitionIdList), topic, string.Join(",", curConsumers));
 
                         foreach (var consumerThreadId in consumerThreadIdSet)
                         {
@@ -684,7 +685,7 @@
                             var nParts = nPartsPerConsumer + (myConsumerPosition + 1 > nConsumersWithExtraPart ? 0 : 1);
 
                             /**
-                             *   Range-partition the sorted partitions to consumers for better locality.
+                             *  Range-partition the sorted partitions to consumers for better locality.
                              *  The first few consumers pick up an extra partition, if any.
                              */
 
@@ -699,7 +700,7 @@
                             {
                                 for (var i = startPart; i < startPart + nParts; i++)
                                 {
-                                    var partition = curPartitions[i];
+                                    var partition = partitionIdList[i];
                                     Logger.InfoFormat("{0} attempting to claim partition {1}", consumerThreadId, partition);
                                     this.AddPartitionTopicInfo(currentTopicRegistry, topicDirs, partition, topic, consumerThreadId);
 

@@ -429,7 +429,11 @@
             var dirs = new ZKGroupDirs(group);
             var consumers = GetChildrenParentMayNotExist(zkClient, dirs.ConsumerRegistryDir);
             var consumerPerTopicMap = new Dictionary<string, List<string>>();
-            foreach (var consumer in consumers)
+
+            // Consumers are named by their group Id plus the machine name and an identifier suffix. In this context,
+            // we are asked to retrieve the consumers for the `group` argument, so we discard any group in /consumers/ids
+            // that is not prefixed with the group id (filter using Where Enumerable.Where extension method)
+            foreach (var consumer in consumers.Where(c => c.StartsWith(group)))
             {
                 var topicCount = TopicCount.ConstructTopicCount(group, consumer, zkClient);
                 foreach (var topicAndConsumer in topicCount.GetConsumerThreadIdsPerTopic())
@@ -581,6 +585,9 @@
             this.Group = @group;
         }
 
+        /// <summary>
+        /// "/consumers"
+        /// </summary>
         public string ConsumerDir
         {
             get
@@ -588,7 +595,9 @@
                 return ZkUtils.ConsumersPath;
             }
         }
-
+        /// <summary>
+        /// "/consumers/[group]
+        /// </summary>
         public string ConsumerGroupDir
         {
             get
@@ -597,6 +606,9 @@
             }
         }
 
+        /// <summary>
+        /// "/consumers/ids"
+        /// </summary>
         public string ConsumerRegistryDir
         {
             get

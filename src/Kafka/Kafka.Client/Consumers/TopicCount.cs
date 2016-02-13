@@ -15,6 +15,9 @@
 
     using Newtonsoft.Json.Linq;
 
+    /// <summary>
+    ///     Represents the topic name and stream count for a consumer group Id
+    /// </summary>
     public abstract class TopicCount
     {
         private static readonly ILog Logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
